@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="author" content="Hupsclick">
+  <meta name="publisher" content="Hupsclick">
+  <meta name="description" content="HUPSCLICK HUPSCAM FOTO VIDEO AUFNAHME WEBCAM DEUTSCH">
+  <meta name="keywords" content="HUPSCLICK, HUPSCAM, FOTO, VIDEO, AUFNAHME, WEBCAM, DEUTSCH">
+  <meta name="copyright" content="Hupsclick">
+  <meta property="og:title" content="HUPSCLICK HUPSCAM FOTO VIDEO AUFNAHME WEBCAM DEUTSCH">
+  <meta property="og:description" content="HUPSCLICK HUPSCAM FOTO VIDEO AUFNAHME WEBCAM DEUTSCH">
+  <meta property="og:type" content="website">
+  <link rel="shortcut icon" href="assets/icon.ico">
+  <title>HupsCam 1.0</title>
+  <style>
+    /* ===== RESET & BASIS ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #0d0d12;
+      color: #e8e6e3;
+      overflow: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ===== LAYOUT ===== */
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* ===== HEADER ===== */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      background: #16161d;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      flex-shrink: 0;
+      z-index: 40;
+    }
+    .logo {
+      font-size: 1.15rem;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      color: #f4f0e9;
+    }
+    .logo span { color: #dfc77d; }
+    .header-actions { display: flex; gap: 10px; align-items: center; }
+
+    /* ===== MAIN ===== */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      position: relative;
+    }
+
+    /* ===== VIDEO CONTAINER – maximaler Platz ===== */
+    .video-wrapper {
+      flex: 1 1 auto;
+      min-height: 180px;
+      position: relative;
+      background: #000;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+      transition: transform 0.15s ease;
+      transform-origin: center center;
+    }
+    .video-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 8px;
+    }
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 6px;
+    }
+    .status-pill {
+      background: rgba(0,0,0,0.72);
+      backdrop-filter: blur(8px);
+      padding: 4px 10px;
+      border-radius: 18px;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .status-pill.recording { background: rgba(220,40,40,0.9); color: #fff; }
+    .status-pill.auto { background: rgba(255,107,22,0.9); color: #fff; }
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #00ff7f;
+      animation: pulse 1.4s infinite;
+    }
+    .dot.rec { background: #ff3b3b; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Countdown */
+    #countdown {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(3.5rem, 16vw, 7rem);
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 0 40px rgba(0,0,0,0.8);
+      z-index: 20;
+      pointer-events: none;
+    }
+
+    /* Zoom Slider */
+    .zoom-control {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.78);
+      backdrop-filter: blur(10px);
+      padding: 5px 12px;
+      border-radius: 26px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 15;
+      pointer-events: auto;
+    }
+    .zoom-control label { font-size: 0.74rem; color: #ccc; white-space: nowrap; }
+    #zoomSlider {
+      width: 110px;
+      accent-color: #ff6b16;
+    }
+    #zoomValue { font-size: 0.78rem; min-width: 34px; text-align: right; }
+
+    /* ===== CONTROLS – kompakt ===== */
+    .controls {
+      background: #16161d;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding: 8px 10px 12px;
+      flex-shrink: 0;
+      overflow-y: auto;
+      max-height: 42vh;
+      position: relative;
+      z-index: 20;
+    }
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+      margin-bottom: 8px;
+    }
+    .btn {
+      appearance: none;
+      border: none;
+      border-radius: 10px;
+      padding: 9px 13px;
+      font-size: 0.86rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.15s, background 0.2s, box-shadow 0.2s;
+      color: #fff;
+      background: #2a2a35;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+    .btn-primary { background: linear-gradient(135deg, #ff6b16, #e55a0c); }
+    .btn-primary:hover { box-shadow: 0 4px 16px rgba(255,107,22,0.4); }
+    .btn-danger { background: linear-gradient(135deg, #e63946, #c1121f); }
+    .btn-secondary { background: #2a2a35; border: 1px solid rgba(255,255,255,0.1); }
+    .btn-icon { padding: 9px; min-width: 42px; justify-content: center; }
+
+    /* Auto Section – schlanker */
+    .auto-section {
+      background: #1c1c26;
+      border-radius: 10px;
+      padding: 8px;
+      margin-top: 0;
+    }
+    .auto-title {
+      font-size: 0.72rem;
+      color: #969298;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+    .auto-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+    }
+    .auto-group {
+      background: #252530;
+      border-radius: 8px;
+      padding: 6px;
+      text-align: center;
+    }
+    .auto-group h4 {
+      font-size: 0.72rem;
+      color: #dfc77d;
+      margin-bottom: 5px;
+    }
+    .auto-btns {
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .auto-btn {
+      padding: 5px 9px;
+      font-size: 0.72rem;
+      border-radius: 7px;
+      background: #333340;
+      border: 1px solid transparent;
+      color: #ddd;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .auto-btn:hover { background: #3f3f50; }
+    .auto-btn.active {
+      background: #ff6b16;
+      border-color: #ff8c42;
+      color: #fff;
+      font-weight: 600;
+    }
+    .auto-btn.stop {
+      background: #444;
+      color: #aaa;
+    }
+    .auto-btn.stop.active {
+      background: #e63946;
+      color: #fff;
+    }
+
+    /* Info Panel – kompakt */
+    .info-panel {
+      background: #1c1c26;
+      border-radius: 9px;
+      padding: 7px 11px;
+      margin-top: 7px;
+      font-size: 0.76rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 12px;
+    }
+    .info-item { display: flex; justify-content: space-between; gap: 6px; }
+    .info-label { color: #969298; }
+    .info-value { color: #f4f0e9; font-weight: 500; text-align: right; }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 42px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(20,20,28,0.95);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 11px;
+      font-size: 0.88rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s ease;
+      z-index: 1000;
+      border: 1px solid rgba(255,255,255,0.1);
+      max-width: 90vw;
+      text-align: center;
+    }
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ===== FOOTER – korrekt ===== */
+    .app-footer {
+      flex-shrink: 0;
+      text-align: center;
+      padding: 4px 0 5px;
+      font-size: 0.58rem;
+      letter-spacing: 2.5px;
+      background: #16161d;
+      color: #8a8789;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      opacity: 0.85;
+    }
+
+    /* ========== LANDSCAPE OPTIMIERUNG ========== */
+    @media (orientation: landscape) and (max-height: 500px) {
+      header { padding: 4px 12px; }
+      .logo { font-size: 1rem; }
+      .coffee-trigger-button {
+        min-width: 100px;
+        height: 32px;
+        font-size: 13px;
+        padding: 3px 10px;
+      }
+      .video-wrapper { min-height: 140px; }
+      .controls {
+        padding: 5px 8px 8px;
+        max-height: 38vh;
+      }
+      .btn-row { margin-bottom: 5px; gap: 5px; }
+      .btn {
+        padding: 6px 10px;
+        font-size: 0.76rem;
+        border-radius: 8px;
+      }
+      .btn-icon { padding: 6px; min-width: 36px; }
+      .auto-section { padding: 5px; }
+      .auto-title { font-size: 0.65rem; margin-bottom: 4px; }
+      .auto-group { padding: 4px; }
+      .auto-group h4 { font-size: 0.66rem; margin-bottom: 3px; }
+      .auto-btn { padding: 3px 7px; font-size: 0.66rem; }
+      .info-panel {
+        padding: 5px 8px;
+        margin-top: 5px;
+        font-size: 0.68rem;
+        gap: 2px 8px;
+      }
+      .zoom-control {
+        bottom: 6px;
+        padding: 3px 10px;
+      }
+      #zoomSlider { width: 90px; }
+      .status-pill { font-size: 0.68rem; padding: 3px 7px; }
+      .app-footer { font-size: 0.52rem; padding: 2px 0 3px; letter-spacing: 2px; }
+      #toast { bottom: 32px; font-size: 0.8rem; padding: 7px 12px; }
+    }
+
+    @media (orientation: landscape) and (min-height: 501px) and (max-height: 700px) {
+      .controls { max-height: 36vh; }
+      .video-wrapper { min-height: 180px; }
+    }
+
+    /* ===== COFFEE BUTTON STYLES ===== */
+    :root {
+      --coffee-modal-bg: #101014;
+      --coffee-modal-card: #15151b;
+      --coffee-modal-header: #202023;
+      --coffee-modal-text: #b9b6b8;
+      --coffee-modal-white: #f4f0e9;
+      --coffee-modal-gold: #dfc77d;
+      --coffee-modal-orange: #ff6b16;
+      --coffee-modal-border: rgba(255, 255, 255, 0.11);
+    }
+    .coffee-trigger-button {
+      width: auto;
+      min-width: 105px;
+      height: 34px;
+      margin: 0;
+      padding: 4px 14px;
+      border: 1px solid #1c1c1c;
+      border-radius: 9px;
+      background-color: #1c1c1c;
+      color: #f2e6d0;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 15px;
+      font-weight: 400;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow:
+        rgba(0, 0, 0, 0.09) 0 2px 1px,
+        rgba(0, 0, 0, 0.09) 0 4px 2px,
+        rgba(0, 0, 0, 0.09) 0 8px 4px,
+        rgba(0, 0, 0, 0.09) 0 16px 8px;
+      transition:
+        background-color 0.3s,
+        transform 0.2s,
+        box-shadow 0.3s;
+    }
+    .coffee-trigger-button:hover {
+      background-color: #3a3a3a;
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0, 255, 127, 0.4);
+    }
+    .coffee-trigger-button:focus-visible,
+    .coffee-close-button:focus-visible,
+    .coffee-paypal-button:focus-visible {
+      outline: 2px solid #00ff7f;
+      outline-offset: 3px;
+    }
+    .coffee-modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      overflow-y: auto;
+      padding: 20px;
+      background-color: rgba(0, 0, 0, 0.46);
+    }
+    .coffee-modal-overlay.is-open { display: flex; }
+    .coffee-modal-card {
+      width: min(92vw, 420px);
+      max-height: min(94dvh, 760px);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 22px;
+      background:
+        linear-gradient(
+          180deg,
+          var(--coffee-modal-header) 0%,
+          var(--coffee-modal-card) 22%,
+          var(--coffee-modal-bg) 100%
+        );
+      color: var(--coffee-modal-text);
+      font-family: Georgia, "Times New Roman", serif;
+      box-shadow:
+        0 24px 80px rgba(0, 0, 0, 0.72),
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+      animation: coffee-modal-in 0.25s ease-out both;
+    }
+    .coffee-modal-header {
+      padding: 32px 24px 25px;
+      border-bottom: 1px solid var(--coffee-modal-border);
+      background:
+        radial-gradient(
+          circle at 50% -40%,
+          rgba(255, 255, 255, 0.12),
+          transparent 62%
+        );
+      text-align: center;
+    }
+    .coffee-modal-title {
+      margin: 0;
+      color: var(--coffee-modal-white);
+      font-size: clamp(22px, 5vw, 26px);
+      font-weight: 400;
+      letter-spacing: 0.5px;
+      line-height: 1.1;
+    }
+    .coffee-modal-title span {
+      color: var(--coffee-modal-gold);
+      font-style: italic;
+    }
+    .coffee-modal-subtitle {
+      margin-top: 13px;
+      color: #969298;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10px;
+      letter-spacing: 2px;
+      line-height: 1.65;
+      text-transform: uppercase;
+    }
+    .coffee-modal-email {
+      display: block;
+      color: var(--coffee-modal-orange);
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      text-transform: none;
+    }
+    .coffee-modal-content {
+      max-height: min(62dvh, 500px);
+      overflow-y: auto;
+      padding: 27px 28px 22px;
+      text-align: center;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 107, 22, 0.55) transparent;
+    }
+    .coffee-modal-created-label {
+      margin-bottom: 7px;
+      color: #969298;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .coffee-modal-author {
+      margin-bottom: 23px;
+      color: var(--coffee-modal-white);
+      font-size: 23px;
+      line-height: 1.2;
+    }
+    .coffee-modal-author span { color: var(--coffee-modal-gold); }
+    .coffee-modal-description {
+      margin: 0;
+      color: var(--coffee-modal-text) !important;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    .coffee-modal-thanks {
+      display: block;
+      margin-top: 6px;
+      color: var(--coffee-modal-orange) !important;
+      font-size: 18px;
+      font-weight: bold;
+      line-height: 1.65;
+    }
+    .coffee-modal-divider {
+      height: 1px;
+      margin: 25px 0 18px;
+      background:
+        linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.16),
+          transparent
+        );
+    }
+    .coffee-modal-support-label {
+      margin-bottom: 13px;
+      color: var(--coffee-modal-orange);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11px;
+      font-weight: bold;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+    .coffee-paypal-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      width: min(100%, 282px);
+      min-height: 48px;
+      padding: 10px 19px;
+      border: 1px solid rgba(0, 134, 255, 0.45);
+      border-radius: 28px;
+      background:
+        linear-gradient(
+          135deg,
+          #0875da 0%,
+          #0069c9 45%,
+          #0754aa 100%
+        );
+      color: #ffffff;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 14px;
+      font-weight: bold;
+      text-decoration: none;
+      white-space: nowrap;
+      box-shadow:
+        0 8px 20px rgba(0, 70, 170, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+      transition:
+        transform 0.2s ease,
+        filter 0.2s ease,
+        box-shadow 0.2s ease;
+    }
+    .coffee-paypal-button:hover {
+      filter: brightness(1.12);
+      transform: translateY(-2px);
+      box-shadow:
+        0 12px 26px rgba(0, 70, 170, 0.38),
+        0 0 0 1px rgba(255, 255, 255, 0.14) inset;
+    }
+    .coffee-paypal-button:active { transform: translateY(0); }
+    .coffee-paypal-logo {
+      font-size: 17px;
+      letter-spacing: -1.3px;
+    }
+    .coffee-paypal-logo-pay { color: #62c6ff; }
+    .coffee-paypal-logo-pal { color: #ffffff; }
+    .coffee-modal-hint {
+      margin: 13px 0 0;
+      color: var(--coffee-modal-orange) !important;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 12px;
+      font-weight: bold;
+      line-height: 1.45;
+    }
+    .coffee-modal-footer {
+      display: flex;
+      justify-content: center;
+      padding: 14px 20px 15px;
+      border-top: 1px solid var(--coffee-modal-border);
+      background: rgba(0, 0, 0, 0.08);
+    }
+    .coffee-close-button {
+      width: 94px;
+      height: 30px;
+      margin: -8px;
+      padding: 0;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.03);
+      color: #b9b6b8;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 12px;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: none;
+      transition:
+        color 0.2s ease,
+        border-color 0.2s ease,
+        background-color 0.2s ease;
+    }
+    .coffee-close-button:hover {
+      border-color: rgba(255, 255, 255, 0.35);
+      background-color: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+      transform: none;
+      box-shadow: none;
+    }
+    @keyframes coffee-modal-in {
+      from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.97);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    @media screen and (max-width: 768px) and (orientation: portrait) {
+      .coffee-modal-overlay { padding: 10px; }
+      .coffee-modal-card {
+        width: calc(100vw - 20px);
+        max-height: calc(100dvh - 28px);
+      }
+      .coffee-modal-header { padding: 27px 18px 21px; }
+      .coffee-modal-content {
+        max-height: calc(100dvh - 220px);
+        padding: 23px 20px 19px;
+      }
+      .coffee-modal-description { font-size: 12px; }
+      .coffee-modal-thanks { font-size: 17px; }
+    }
+    @media screen and (max-width: 900px) and (orientation: landscape) and (max-height: 600px) {
+      .coffee-modal-overlay { padding: 10px; }
+      .coffee-modal-card {
+        width: min(88vw, 560px);
+        max-height: calc(100dvh - 20px);
+      }
+      .coffee-modal-header { padding: 17px 22px 14px; }
+      .coffee-modal-title { font-size: clamp(24px, 5vw, 34px); }
+      .coffee-modal-subtitle { margin-top: 6px; }
+      .coffee-modal-content {
+        max-height: calc(100dvh - 130px);
+        padding: 14px 25px 12px;
+      }
+      .coffee-modal-author { margin-bottom: 11px; font-size: 19px; }
+      .coffee-modal-description { font-size: 11px; line-height: 1.45; }
+      .coffee-modal-thanks { font-size: 15px; line-height: 1.35; }
+      .coffee-modal-divider { margin: 12px 0 9px; }
+      .coffee-modal-support-label { margin-bottom: 7px; font-size: 10px; }
+      .coffee-paypal-button {
+        min-height: 38px;
+        padding: 7px 17px;
+        font-size: 12px;
+      }
+      .coffee-modal-hint { margin-top: 7px; font-size: 10px; }
+      .coffee-modal-footer { padding: 8px 20px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .coffee-modal-card { animation: none; }
+      .coffee-trigger-button,
+      .coffee-paypal-button,
+      .coffee-close-button { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- HEADER -->
+    <header>
+      <div class="logo">HupsCam <span>1.0</span></div>
+      <div class="header-actions">
+        <button id="coffeeTrigger" class="coffee-trigger-button" type="button" aria-haspopup="dialog" aria-controls="coffeeModal">
+          Kaffee
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN -->
+    <main>
+      <div class="video-wrapper" id="videoWrapper">
+        <video id="video" autoplay playsinline muted></video>
+        <div class="video-overlay">
+          <div class="status-bar">
+            <div class="status-pill" id="statusPill">
+              <span class="dot" id="statusDot"></span>
+              <span id="statusText">Kamera wird gestartet…</span>
+            </div>
+            <div class="status-pill" id="timerPill" style="display:none;">
+              <span id="timerText">00:00</span>
+            </div>
+          </div>
+        </div>
+        <div id="countdown">3</div>
+        <div class="zoom-control">
+          <label>Zoom</label>
+          <input type="range" id="zoomSlider" min="1" max="4" step="0.1" value="1" />
+          <span id="zoomValue">1.0×</span>
+        </div>
+      </div>
+
+      <!-- CONTROLS -->
+      <div class="controls">
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btnPhoto" title="Sofort Foto">
+            📷 Foto
+          </button>
+          <button class="btn btn-danger" id="btnVideo" title="Video starten/stoppen">
+            🎥 Video
+          </button>
+          <button class="btn btn-secondary btn-icon" id="btnSwitch" title="Kamera wechseln">
+            🔄
+          </button>
+          <button class="btn btn-secondary btn-icon" id="btnMirror" title="Spiegeln">
+            🪞
+          </button>
+          <button class="btn btn-secondary btn-icon" id="btnFullscreen" title="Vollbild">
+            ⛶
+          </button>
+        </div>
+
+        <!-- AUTO SECTION -->
+        <div class="auto-section">
+          <div class="auto-title">Automatische Aufnahmen</div>
+          <div class="auto-grid">
+            <div class="auto-group">
+              <h4>Foto Auto</h4>
+              <div class="auto-btns">
+                <button class="auto-btn" data-type="photo" data-min="5">5 Min</button>
+                <button class="auto-btn" data-type="photo" data-min="10">10 Min</button>
+                <button class="auto-btn" data-type="photo" data-min="30">30 Min</button>
+                <button class="auto-btn stop" data-type="photo" data-min="0">Stop</button>
+              </div>
+            </div>
+            <div class="auto-group">
+              <h4>Video Auto</h4>
+              <div class="auto-btns">
+                <button class="auto-btn" data-type="video" data-min="5">5 Min</button>
+                <button class="auto-btn" data-type="video" data-min="10">10 Min</button>
+                <button class="auto-btn" data-type="video" data-min="30">30 Min</button>
+                <button class="auto-btn stop" data-type="video" data-min="0">Stop</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- INFO -->
+        <div class="info-panel" id="infoPanel">
+          <div class="info-item"><span class="info-label">Auflösung</span><span class="info-value" id="infoRes">–</span></div>
+          <div class="info-item"><span class="info-label">Letzte Aufnahme</span><span class="info-value" id="infoLast">–</span></div>
+          <div class="info-item"><span class="info-label">Dateigröße</span><span class="info-value" id="infoSize">–</span></div>
+          <div class="info-item"><span class="info-label">Status</span><span class="info-value" id="infoStatus">Bereit</span></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <div class="app-footer">© HUPSCLICK Manfred Häcker</div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <!-- COFFEE MODAL -->
+  <div id="coffeeModal" class="coffee-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="coffeeModalTitle" aria-hidden="true">
+    <section class="coffee-modal-card" role="document">
+      <header class="coffee-modal-header">
+        <h2 id="coffeeModalTitle" class="coffee-modal-title">
+          HupsCam <span>1.0</span>
+        </h2>
+        <div class="coffee-modal-subtitle">
+          Eine Private App von Hupsclick
+          <span class="coffee-modal-email">regiemail@gmx.de</span>
+        </div>
+      </header>
+      <div class="coffee-modal-content">
+        <div class="coffee-modal-created-label">Erstellt von</div>
+        <div class="coffee-modal-author">Manfred&nbsp;<span>Häcker</span></div>
+        <p class="coffee-modal-description">
+          HupsCam 1.0 überträgt keine Daten an mich als Entwickler.
+          Dennoch kann ich keine Verantwortung für Datenverarbeitungen übernehmen,
+          die durch das verwendete Gerät, den Browser, das Betriebssystem oder
+          installierte Drittanbieter-Dienste (PayPal) erfolgen.
+          Die Nutzung erfolgt auf eigene Verantwortung.
+          <span class="coffee-modal-thanks">
+            Danke, dass du meine App verwendest.
+          </span>
+        </p>
+        <div class="coffee-modal-divider"></div>
+        <div class="coffee-modal-support-label">☕ Hat dir die App gefallen?</div>
+        <a class="coffee-paypal-button" href="https://www.paypal.me/ManfredKaffee" target="_blank" rel="noopener noreferrer">
+          <span class="coffee-paypal-logo">
+            <span class="coffee-paypal-logo-pay">Pay</span><span class="coffee-paypal-logo-pal">Pal</span>
+          </span>
+          Kauf mir einen Kaffee
+        </a>
+        <p class="coffee-modal-hint">Jeder Kaffee hilft, weitere Projekte zu realisieren ✦</p>
+      </div>
+      <footer class="coffee-modal-footer">
+        <button id="coffeeClose" class="coffee-close-button" type="button">Schließen</button>
+      </footer>
+    </section>
+  </div>
+
+ <script>
+"use strict";
+
+// ===== GLOBAL STATE =====
+let stream = null;
+let mediaRecorder = null;
+let recordedChunks = [];
+let isRecording = false;
+let currentFacingMode = "environment";
+let isMirrored = false;
+let zoomLevel = 1;
+let photoInterval = null;
+let videoInterval = null;
+let videoAutoDuration = 60000;
+let countdownActive = false;
+let recordingTimerInterval = null;
+
+// ===== DOM =====
+const video = document.getElementById("video");
+const videoWrapper = document.getElementById("videoWrapper");
+const btnPhoto = document.getElementById("btnPhoto");
+const btnVideo = document.getElementById("btnVideo");
+const btnSwitch = document.getElementById("btnSwitch");
+const btnMirror = document.getElementById("btnMirror");
+const btnFullscreen = document.getElementById("btnFullscreen");
+const zoomSlider = document.getElementById("zoomSlider");
+const zoomValue = document.getElementById("zoomValue");
+const statusPill = document.getElementById("statusPill");
+const statusDot = document.getElementById("statusDot");
+const statusText = document.getElementById("statusText");
+const timerPill = document.getElementById("timerPill");
+const timerText = document.getElementById("timerText");
+const countdownEl = document.getElementById("countdown");
+const toastEl = document.getElementById("toast");
+const infoRes = document.getElementById("infoRes");
+const infoLast = document.getElementById("infoLast");
+const infoSize = document.getElementById("infoSize");
+const infoStatus = document.getElementById("infoStatus");
+
+// ===== HELPERS =====
+function showToast(msg, duration = 2800) {
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  setTimeout(() => toastEl.classList.remove("show"), duration);
+}
+
+function updateStatus(text, type = "normal") {
+  statusText.textContent = text;
+  statusPill.classList.remove("recording", "auto");
+  statusDot.classList.remove("rec");
+  if (type === "recording") {
+    statusPill.classList.add("recording");
+    statusDot.classList.add("rec");
+  } else if (type === "auto") {
+    statusPill.classList.add("auto");
+  }
+}
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60).toString().padStart(2, "0");
+  const s = Math.floor(seconds % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
+  return (bytes / 1048576).toFixed(2) + " MB";
+}
+
+function timestamp() {
+  const d = new Date();
+  return d.toISOString().replace(/[:.]/g, "-").slice(0, 19);
+}
+
+// ===== HIGHLIGHT RECOVERY / OVEREXPOSURE FIX =====
+/**
+ * Sanfte Highlight-Kompression + leichte Kontrast-/Sättigungsverbesserung.
+ * Verhindert Überbelichtung bei hellen Flächen (Blumen, Bildschirme, Himmel etc.)
+ */
+function applyHighlightRecovery(imageData) {
+  const data = imageData.data;
+  const len = data.length;
+
+  // Parameter (kannst du bei Bedarf feinjustieren)
+  const knee = 0.72;          // Ab diesem Helligkeitswert (0–1) beginnt die Kompression
+  const strength = 0.55;      // Stärke der Highlight-Kompression (0–1)
+  const contrast = 1.08;      // Leichte Kontrastanhebung
+  const saturation = 1.12;    // Leichte Sättigungsanhebung
+
+  for (let i = 0; i < len; i += 4) {
+    let r = data[i] / 255;
+    let g = data[i + 1] / 255;
+    let b = data[i + 2] / 255;
+
+    // Luminanz (perceptuell)
+    let lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+    // Soft-Knee Highlight-Kompression
+    if (lum > knee) {
+      const over = (lum - knee) / (1 - knee);
+      const compressed = knee + (1 - knee) * (1 - Math.pow(1 - over, 1 + strength * 2));
+      const scale = compressed / lum;
+      r *= scale;
+      g *= scale;
+      b *= scale;
+      lum = compressed;
+    }
+
+    // Leichte Kontrastanhebung um den Mittelwert 0.5
+    r = (r - 0.5) * contrast + 0.5;
+    g = (g - 0.5) * contrast + 0.5;
+    b = (b - 0.5) * contrast + 0.5;
+
+    // Leichte Sättigungsanhebung
+    const gray = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    r = gray + (r - gray) * saturation;
+    g = gray + (g - gray) * saturation;
+    b = gray + (b - gray) * saturation;
+
+    // Clamp und zurückschreiben
+    data[i]     = Math.max(0, Math.min(255, Math.round(r * 255)));
+    data[i + 1] = Math.max(0, Math.min(255, Math.round(g * 255)));
+    data[i + 2] = Math.max(0, Math.min(255, Math.round(b * 255)));
+    // Alpha bleibt unverändert
+  }
+
+  return imageData;
+}
+
+// ===== CAMERA =====
+async function startCamera() {
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+  }
+
+  const constraints = {
+    video: {
+      facingMode: currentFacingMode,
+      width: { ideal: 1920 },
+      height: { ideal: 1080 }
+    },
+    audio: true
+  };
+
+  try {
+    stream = await navigator.mediaDevices.getUserMedia(constraints);
+    video.srcObject = stream;
+    video.onloadedmetadata = () => {
+      infoRes.textContent = `${video.videoWidth} × ${video.videoHeight}`;
+      updateStatus("Kamera bereit");
+      infoStatus.textContent = "Bereit";
+    };
+    applyTransform();
+  } catch (err) {
+    console.error(err);
+    updateStatus("Kamera-Zugriff verweigert");
+    showToast("Kamera konnte nicht gestartet werden. Bitte Berechtigung erteilen.");
+  }
+}
+
+function applyTransform() {
+  video.style.transform = `scaleX(${isMirrored ? -1 : 1}) scale(${zoomLevel})`;
+}
+
+// ===== ZOOM =====
+zoomSlider.addEventListener("input", () => {
+  zoomLevel = parseFloat(zoomSlider.value);
+  zoomValue.textContent = zoomLevel.toFixed(1) + "×";
+  applyTransform();
+});
+
+videoWrapper.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  let newZoom = zoomLevel + (e.deltaY > 0 ? -0.1 : 0.1);
+  newZoom = Math.max(1, Math.min(4, newZoom));
+  zoomLevel = newZoom;
+  zoomSlider.value = newZoom;
+  zoomValue.textContent = newZoom.toFixed(1) + "×";
+  applyTransform();
+}, { passive: false });
+
+// ===== PHOTO – mit Zoom + Highlight-Recovery =====
+async function takePhoto(withCountdown = true) {
+  if (!stream || countdownActive) return;
+
+  if (withCountdown) {
+    await runCountdown(3);
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext("2d");
+
+  // Digital-Zoom: zentrierten Ausschnitt berechnen
+  const zoom = Math.max(1, zoomLevel);
+  const sx = (video.videoWidth - video.videoWidth / zoom) / 2;
+  const sy = (video.videoHeight - video.videoHeight / zoom) / 2;
+  const sWidth = video.videoWidth / zoom;
+  const sHeight = video.videoHeight / zoom;
+
+  // Spiegelung anwenden
+  if (isMirrored) {
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+  }
+
+  // Gezoomten Ausschnitt auf volle Canvas-Größe zeichnen
+  ctx.drawImage(
+    video,
+    sx, sy, sWidth, sHeight,
+    0, 0, canvas.width, canvas.height
+  );
+
+  // === Highlight-Recovery anwenden ===
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  applyHighlightRecovery(imageData);
+  ctx.putImageData(imageData, 0, 0);
+
+  // Als JPEG speichern
+  canvas.toBlob((blob) => {
+    if (!blob) return;
+    const name = `HupsCam_Foto_${timestamp()}.jpg`;
+    downloadBlob(blob, name);
+    infoLast.textContent = new Date().toLocaleTimeString("de-DE");
+    infoSize.textContent = formatBytes(blob.size);
+    infoStatus.textContent = "Foto gespeichert";
+    showToast("Foto gespeichert ✓ (Highlight-Fix aktiv)");
+    updateStatus("Foto aufgenommen");
+  }, "image/jpeg", 0.92);
+}
+
+// ===== VIDEO =====
+function startRecording() {
+  if (!stream || isRecording) return;
+  recordedChunks = [];
+
+  const options = { mimeType: "video/webm;codecs=vp9,opus" };
+  try {
+    mediaRecorder = new MediaRecorder(stream, options);
+  } catch (e) {
+    mediaRecorder = new MediaRecorder(stream);
+  }
+
+  mediaRecorder.ondataavailable = (e) => {
+    if (e.data.size > 0) recordedChunks.push(e.data);
+  };
+
+  mediaRecorder.onstop = () => {
+    const blob = new Blob(recordedChunks, { type: "video/webm" });
+    const name = `HupsCam_Video_${timestamp()}.webm`;
+    downloadBlob(blob, name);
+    infoLast.textContent = new Date().toLocaleTimeString("de-DE");
+    infoSize.textContent = formatBytes(blob.size);
+    infoStatus.textContent = "Video gespeichert";
+    showToast("Video gespeichert ✓");
+    updateStatus("Video gespeichert");
+    timerPill.style.display = "none";
+    btnVideo.innerHTML = "🎥 Video";
+    btnVideo.classList.remove("btn-danger");
+    btnVideo.classList.add("btn-primary");
+    if (recordingTimerInterval) {
+      clearInterval(recordingTimerInterval);
+      recordingTimerInterval = null;
+    }
+  };
+
+  mediaRecorder.start(1000);
+  isRecording = true;
+  btnVideo.innerHTML = "⏹ Stop";
+  btnVideo.classList.remove("btn-primary");
+  btnVideo.classList.add("btn-danger");
+  updateStatus("Aufnahme läuft…", "recording");
+  timerPill.style.display = "flex";
+
+  let seconds = 0;
+  timerText.textContent = "00:00";
+  recordingTimerInterval = setInterval(() => {
+    if (!isRecording) {
+      clearInterval(recordingTimerInterval);
+      return;
+    }
+    seconds++;
+    timerText.textContent = formatTime(seconds);
+  }, 1000);
+}
+
+function stopRecording() {
+  if (mediaRecorder && isRecording) {
+    mediaRecorder.stop();
+    isRecording = false;
+  }
+}
+
+btnVideo.addEventListener("click", () => {
+  if (isRecording) stopRecording();
+  else startRecording();
+});
+
+// ===== AUTO =====
+function clearAuto(type) {
+  if (type === "photo" && photoInterval) {
+    clearInterval(photoInterval);
+    photoInterval = null;
+  }
+  if (type === "video" && videoInterval) {
+    clearInterval(videoInterval);
+    videoInterval = null;
+  }
+  document.querySelectorAll(`.auto-btn[data-type="${type}"]`).forEach(b => b.classList.remove("active"));
+}
+
+document.querySelectorAll(".auto-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const type = btn.dataset.type;
+    const min = parseInt(btn.dataset.min, 10);
+
+    if (min === 0) {
+      clearAuto(type);
+      updateStatus(type === "photo" ? "Foto-Auto gestoppt" : "Video-Auto gestoppt");
+      infoStatus.textContent = "Auto gestoppt";
+      showToast(`${type === "photo" ? "Foto" : "Video"}-Auto gestoppt`);
+      return;
+    }
+
+    clearAuto(type);
+    document.querySelectorAll(`.auto-btn[data-type="${type}"]`).forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+
+    const ms = min * 60 * 1000;
+
+    if (type === "photo") {
+      photoInterval = setInterval(() => {
+        takePhoto(false);
+      }, ms);
+      updateStatus(`Foto alle ${min} Min`, "auto");
+      infoStatus.textContent = `Foto-Auto ${min} Min`;
+      showToast(`Foto-Auto alle ${min} Minuten gestartet`);
+    } else {
+      videoInterval = setInterval(() => {
+        if (isRecording) return;
+        startRecording();
+        setTimeout(() => {
+          if (isRecording) stopRecording();
+        }, videoAutoDuration);
+      }, ms);
+      updateStatus(`Video alle ${min} Min`, "auto");
+      infoStatus.textContent = `Video-Auto ${min} Min`;
+      showToast(`Video-Auto alle ${min} Minuten gestartet`);
+    }
+  });
+});
+
+// ===== COUNTDOWN =====
+function runCountdown(seconds) {
+  return new Promise(resolve => {
+    countdownActive = true;
+    countdownEl.style.display = "flex";
+    let n = seconds;
+    countdownEl.textContent = n;
+
+    const iv = setInterval(() => {
+      n--;
+      if (n <= 0) {
+        clearInterval(iv);
+        countdownEl.style.display = "none";
+        countdownActive = false;
+        resolve();
+      } else {
+        countdownEl.textContent = n;
+      }
+    }, 1000);
+  });
+}
+
+// ===== DOWNLOAD =====
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 150);
+}
+
+// ===== BUTTONS =====
+btnPhoto.addEventListener("click", () => takePhoto(true));
+
+btnSwitch.addEventListener("click", () => {
+  currentFacingMode = currentFacingMode === "user" ? "environment" : "user";
+  startCamera();
+  showToast(currentFacingMode === "user" ? "Frontkamera" : "Rückkamera");
+});
+
+btnMirror.addEventListener("click", () => {
+  isMirrored = !isMirrored;
+  applyTransform();
+  showToast(isMirrored ? "Spiegelmodus an" : "Spiegelmodus aus");
+});
+
+btnFullscreen.addEventListener("click", () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen?.();
+  } else {
+    document.exitFullscreen?.();
+  }
+});
+
+// ===== COFFEE MODAL =====
+const coffeeTrigger = document.getElementById("coffeeTrigger");
+const coffeeModal = document.getElementById("coffeeModal");
+const coffeeClose = document.getElementById("coffeeClose");
+
+function openCoffeeModal() {
+  coffeeModal.classList.add("is-open");
+  coffeeModal.setAttribute("aria-hidden", "false");
+  coffeeClose.focus();
+}
+
+function closeCoffeeModal() {
+  coffeeModal.classList.remove("is-open");
+  coffeeModal.setAttribute("aria-hidden", "true");
+  coffeeTrigger.focus();
+}
+
+coffeeTrigger.addEventListener("click", openCoffeeModal);
+coffeeClose.addEventListener("click", closeCoffeeModal);
+
+coffeeModal.addEventListener("click", (e) => {
+  if (e.target === coffeeModal) closeCoffeeModal();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && coffeeModal.classList.contains("is-open")) {
+    closeCoffeeModal();
+  }
+});
+
+// ===== INIT =====
+startCamera();
+
+window.addEventListener("beforeunload", () => {
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  clearAuto("photo");
+  clearAuto("video");
+  if (recordingTimerInterval) clearInterval(recordingTimerInterval);
+});
+</script>
+</body>
+</html>
